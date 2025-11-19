@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Password Page</title>
+<style>
+body {
+    background: linear-gradient(to right, #1e3c72, #2a5298);
+    font-family: 'Arial', sans-serif;
+    color: #fff;
+    text-align: center;
+    padding: 50px;
+}
+.container {
+    background: rgba(0,0,0,0.6);
+    padding: 40px;
+    border-radius: 15px;
+    max-width: 400px;
+    margin: auto;
+    box-shadow: 0 0 15px rgba(0,0,0,0.3);
+}
+h2 {
+    font-size: 28px;
+    margin-bottom: 20px;
+}
+#passBox {
+    font-size: 36px;
+    letter-spacing: 5px;
+    margin: 20px 0;
+    font-weight: bold;
+    user-select: none; /* Disable manual copy */
+}
+button {
+    padding: 12px 25px;
+    font-size: 18px;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    background: #ff9900;
+    color: #000;
+    font-weight: bold;
+    transition: 0.3s;
+}
+button:hover {
+    background: #ffc107;
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+<h2>Your Password</h2>
+<p id="passBox">Loading...</p>
+<button id="copyBtn">Copy Password</button>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+
+<script>
+// ---------------- Firebase Config ----------------
+var firebaseConfig = {
+    apiKey: "AIzaSyBRdoRcOPvCOFJMthBA7rS_J8Bx1ZWWU3g",
+    authDomain: "appdatasave-bf93d.firebaseapp.com",
+    databaseURL: "https://appdatasave-bf93d-default-rtdb.firebaseio.com",
+    projectId: "appdatasave-bf93d",
+    storageBucket: "appdatasave-bf93d.appspot.com",
+    messagingSenderId: "401545013632",
+    appId: "1:401545013632:android:bc631e7813f8d6364db965"
+};
+firebase.initializeApp(firebaseConfig);
+
+// ---------------- UID from URL ----------------
+const urlParams = new URLSearchParams(window.location.search);
+const uid = urlParams.get('uid');
+if(!uid){
+    document.getElementById("passBox").innerText = "Error: UID missing!";
+}
+
+// ---------------- Fetch Password ----------------
+let passwordFetched = false;
+firebase.database().ref(`keyG/user/${uid}/pass`).on("value", snapshot => {
+    if(snapshot.exists() && !passwordFetched){
+        const pass = snapshot.val();
+        document.getElementById("passBox").innerText = pass;
+        passwordFetched = true;
+    }
+});
+
+// ---------------- Copy Button ----------------
+document.getElementById("copyBtn").addEventListener("click", function(){
+    if(!passwordFetched) return;
+    const pass = document.getElementById("passBox").innerText;
+    navigator.clipboard.writeText(pass).then(() => {
+        alert("Password copied!");
+        // Notify app via JS interface
+        if(window.AndroidApp){
+            window.AndroidApp.passwordCopied(pass);
+        }
+        // Prevent multiple copies
+        document.getElementById("copyBtn").disabled = true;
+        document.getElementById("copyBtn").innerText = "Copied";
+    }).catch(err=>{
+        alert("Copy failed: "+err);
+    });
+});
+
+// ---------------- Prevent Refresh ----------------
+if (window.history && window.history.pushState) {
+    window.history.pushState(null, null, window.location.href);
+    window.onpopstate = function () {
+        window.history.go(1);
+    };
+}
+</script>
+
+</body>
+  </html>
